@@ -14,7 +14,6 @@ JUGADOR_CY = ALTO / 2
 JUGADOR_RADIO = 44
 
 # rectangulos de los botones: la vista los dibuja y el controlador los clickea
-# (coordenadas del mundo 2x; el controlador multiplica la posicion del clic)
 BOTON_JUGAR = pygame.Rect(ANCHO / 2 - 240, 500, 480, 120)
 BOTON_SALIR = pygame.Rect(ANCHO / 2 - 240, 660, 480, 120)
 BOTON_OTRA_PARTIDA = pygame.Rect(ANCHO / 2 - 240, 520, 480, 110)
