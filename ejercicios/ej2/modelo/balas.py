@@ -1,5 +1,8 @@
-"""Balas del jugador: la bala es el caracter tecleado viajando a la palabra."""
+# balas.py
+# Balas del jugador: la bala es el caracter tecleado viajando a la palabra.
+
 import math
+
 
 class Bala:
 
@@ -13,7 +16,7 @@ class Bala:
         self.caracter = caracter
 
     def avanzar(self, dt_ms):
-        """Vuela hacia su objetivo; True al llegar."""
+        # vuela hacia su objetivo; True al llegar
         cx, cy = self.objetivo.centro()
         dist = self.VELOCIDAD * dt_ms / 1000.0
         dx = cx - self.x
@@ -27,13 +30,9 @@ class Bala:
         self.y = self.y + dy / d * dist
         return False
 
-    def dibujar(self, screen, fuente):
-        sup = fuente.render(self.caracter, True, self.COLOR)
-        screen.blit(sup, sup.get_rect(center=(int(self.x), int(self.y))))
-
 
 def disparar(balas, origen, objetivo, caracter):
-    """Devuelve la lista de balas con una bala nueva."""
+    # devuelve la lista de balas con una bala nueva
     objetivo.registrar_disparo()
     nueva = []
     for bala in balas:
@@ -43,7 +42,7 @@ def disparar(balas, origen, objetivo, caracter):
 
 
 def avanzar(balas, dt_ms):
-    """Avanza las balas. Devuelve (balas_vivas, palabras_destruidas)."""
+    # avanza las balas; devuelve (balas_vivas, palabras_destruidas)
     vivas = []
     destruidas = []
     for bala in balas:
@@ -53,8 +52,3 @@ def avanzar(balas, dt_ms):
         else:
             vivas.append(bala)
     return vivas, destruidas
-
-
-def dibujar(screen, balas, fuente):
-    for bala in balas:
-        bala.dibujar(screen, fuente)

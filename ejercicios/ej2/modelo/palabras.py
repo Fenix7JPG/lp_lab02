@@ -1,18 +1,12 @@
-"""Enemigos: naves con etiqueta que se acercan al jugador.
+# palabras.py
+# Enemigos: naves con etiqueta que se acercan al jugador; mueren con un impacto por caracter.
 
-Muere con un impacto por cada caracter de su palabra.
-"""
 import math
 import random
 
 import pygame
 
-from juego.constantes import ALTO, ANCHO, LARGO_MAXIMO, PALABRAS
-
-
-def lerp_color(color_a, color_b, factor):
-    factor = max(0.0, min(1.0, factor))
-    return tuple(int(a + (b - a) * factor) for a, b in zip(color_a, color_b))
+from modelo.constantes import ALTO, ANCHO, PALABRAS
 
 
 def _posicion_borde():
@@ -37,22 +31,41 @@ def _choca_con(palabra, palabras):
     return False
 
 
+def peso_de_palabra(texto, oleada):
+    # peso de una palabra en el sorteo de la oleada
+    # el largo ideal crece con la oleada (3, 4, 5, 6...); afinar aqui
+    largo_ideal = 2 + oleada
+    # cada letra de distancia al largo ideal resta 3 de peso; afinar aqui
+    distancia = abs(len(texto) - largo_ideal)
+    # peso minimo 1: ninguna palabra queda fuera del sorteo
+    return max(1, 10 - 3 * distancia)
+
+
 def iniciar_oleada(n):
-    """Genera y devuelve una lista nueva de enemigos para la oleada n."""
+    # genera y devuelve una lista nueva de enemigos para la oleada n
     nueva = []
-    limite_largo = min(2 + n, LARGO_MAXIMO)
     cantidad = min(2 + n, 7)
     velocidad = min(18 + 10 * (n - 1), 90)
 
     usadas = set()
     for _ in range(cantidad):
+        # candidatas: todas las palabras con inicial aun libre en la oleada
         candidatos = []
         for t in PALABRAS:
-            if len(t) <= limite_largo and t[0] not in usadas:
+            if t[0] not in usadas:
                 candidatos.append(t)
         if not candidatos:
             break
-        texto = random.choice(candidatos)
+
+        # bolsa de sorteo: cada palabra entra tantas veces como su peso,
+        # asi las cercanas al largo ideal de la oleada salen mas seguido
+        bolsa = []
+        for t in candidatos:
+            peso = peso_de_palabra(t, n)
+            for _ in range(peso):
+                bolsa.append(t)
+
+        texto = random.choice(bolsa)
         usadas.add(texto[0])
 
         pos = _posicion_borde()
@@ -70,16 +83,10 @@ def iniciar_oleada(n):
 class PalabraObjetivo:
 
     TAM_FUENTE_BASE = 36
-    ESCALA_INICIAL = 2.2
     DURACION_ANIMACION = 350
     DURACION_FALLO = 500
     DURACION_MUERTE = 300
     RADIO_TOQUE = 46
-
-    COLOR_MARCO = (128, 0, 200)
-    COLOR_VERDE = (0, 200, 0)
-    COLOR_BLANCO = (255, 255, 255)
-    COLOR_ROJO = (220, 30, 30)
 
     def __init__(self, texto, pos, velocidad):
         self.texto = texto
@@ -113,7 +120,7 @@ class PalabraObjetivo:
         return pygame.Rect(self.x, self.y, self.ancho, self.alto)
 
     def avanzar(self, dt_ms, jugador_cx, jugador_cy):
-        """Se acerca al jugador; True si lo toca."""
+        # se acerca al jugador; True si lo toca
         if self.muriendo == True:
             return False
         dist = self.velocidad * dt_ms / 1000.0
@@ -130,7 +137,7 @@ class PalabraObjetivo:
         return d <= self.RADIO_TOQUE
 
     def definir_completado(self, nuevo_completado):
-        """Fija la parte verde escrita; ignora si muere o ya se completo."""
+        # fija la parte verde escrita; ignora si muere o ya se completo
         if self.muriendo == True:
             return
         # el verde ya completo se congela (no vuelve a blanco)
@@ -138,21 +145,29 @@ class PalabraObjetivo:
             return
         if self.texto.startswith(nuevo_completado):
             if len(self.completado_valido) == 0 and len(nuevo_completado) > 0:
+                # al enfocar la palabra arranca la animacion del aro
                 self.tiempo_animacion = self.DURACION_ANIMACION
             self.completado_valido = nuevo_completado
 
     def registrar_disparo(self):
         self.balas_disparadas = self.balas_disparadas + 1
 
+    def perder_progreso(self):
+        # una letra errada borra TODO el progreso: verde, balas disparadas e impactos
+        self.completado_valido = ""
+        self.balas_disparadas = 0
+        self.impactos = 0
+        self.tiempo_fallo = self.DURACION_FALLO
+
     def iniciar_muerte(self):
-        """Activa la animacion de muerte."""
+        # activa la animacion de muerte
         if self.muriendo == True:
             return
         self.muriendo = True
         self.tiempo_muerte = self.DURACION_MUERTE
 
     def recibir_impacto(self):
-        """Cuenta un impacto; muere al completar sus letras."""
+        # cuenta un impacto; muere al completar sus letras
         if self.muriendo == True:
             return False
         self.impactos = self.impactos + 1
@@ -162,7 +177,7 @@ class PalabraObjetivo:
         return False
 
     def termino_muerte(self):
-        """True cuando la animacion de muerte termino."""
+        # True cuando la animacion de muerte termino
         return self.muriendo == True and self.tiempo_muerte == 0
 
     def actualizar(self, dt):
@@ -173,54 +188,3 @@ class PalabraObjetivo:
             self.tiempo_fallo = max(0, self.tiempo_fallo - dt)
         if self.muriendo == True:
             self.tiempo_muerte = max(0, self.tiempo_muerte - dt)
-
-    def dibujar(self, screen):
-        """Dibuja el marco con el texto (verde = ya escrito)."""
-        if self.muriendo == True:
-            self._dibujar_muerte(screen)
-            return
-        parte_verde = self.completado_valido
-        parte_blanca = self.texto[len(parte_verde):]
-
-        factor_fallo = self.tiempo_fallo / self.DURACION_FALLO
-        color_verde = lerp_color(self.COLOR_VERDE, self.COLOR_ROJO, factor_fallo)
-        color_blanco = lerp_color(self.COLOR_BLANCO, self.COLOR_ROJO, factor_fallo)
-        color_marco = lerp_color(self.COLOR_MARCO, self.COLOR_ROJO, factor_fallo)
-
-        superficie_verde = self.font.render(parte_verde, True, color_verde)
-        superficie_blanca = self.font.render(parte_blanca, True, color_blanco)
-
-        padding = 10
-        ancho_total = superficie_verde.get_width() + superficie_blanca.get_width()
-        alto_total = self.font.get_height()
-        marco_ancho = ancho_total + padding * 2
-        marco_alto = alto_total + padding * 2
-
-        marco_x = self.x
-        marco_y = self.y
-
-        marco = pygame.Rect(marco_x, marco_y, marco_ancho, marco_alto)
-        pygame.draw.rect(screen, (0, 0, 0), marco)
-        pygame.draw.rect(screen, color_marco, marco, 3)
-
-        if self.tiempo_animacion > 0:
-            factor_anim = self.tiempo_animacion / self.DURACION_ANIMACION
-            borde = int(marco_alto / 2 + (marco_alto * self.ESCALA_INICIAL) * factor_anim)
-            pop = marco.inflate(borde, borde)
-            pygame.draw.rect(screen, color_marco, pop, max(1, int(4 * factor_anim)))
-
-        screen.blit(superficie_verde, (marco_x + padding, marco_y + padding))
-        screen.blit(superficie_blanca, (marco_x + padding + superficie_verde.get_width(), marco_y + padding))
-
-    def _dibujar_muerte(self, screen):
-        """Marco que crece y desaparece."""
-        factor = self.tiempo_muerte / self.DURACION_MUERTE
-
-        centro = self.centro()
-        marco = pygame.Rect(0, 0, self.ancho, self.alto)
-        marco.center = (int(centro[0]), int(centro[1]))
-
-        crece = int((self.ancho * 1.2) * (1.0 - factor))
-        pop = marco.inflate(crece, crece)
-
-        pygame.draw.rect(screen, self.COLOR_MARCO, pop, 3)

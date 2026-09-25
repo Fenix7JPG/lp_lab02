@@ -1,13 +1,14 @@
-"""Interpreta las teclas del jugador: devuelve (texto, palabra_activa).
+# entrada_texto.py
+# Interpreta las teclas del jugador: devuelve (texto, palabra_activa, palabra_errada).
 
-El matching ignora mayusculas y minusculas.
-"""
 import pygame
 
 
+# el matching ignora mayusculas y minusculas
 def actualizar_texto(eventos, palabras, texto_actual, palabra_activa):
     texto = texto_actual
     activa = palabra_activa
+    palabra_errada = None
 
     for evento in eventos:
         if evento.type == pygame.TEXTINPUT:
@@ -23,8 +24,9 @@ def actualizar_texto(eventos, palabras, texto_actual, palabra_activa):
                     if caracter == activa.texto[len(texto)]:
                         texto = texto + caracter
                     else:
-                        # letra errada: se pierde el progreso
-                        activa.tiempo_fallo = activa.DURACION_FALLO
+                        # letra errada: se pierde todo el progreso de la palabra
+                        activa.perder_progreso()
+                        palabra_errada = activa
                         texto = ""
                         activa = None
         elif evento.type == pygame.KEYDOWN:
@@ -33,4 +35,4 @@ def actualizar_texto(eventos, palabras, texto_actual, palabra_activa):
                 if texto == "":
                     activa = None
 
-    return texto, activa
+    return texto, activa, palabra_errada
