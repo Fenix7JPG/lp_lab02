@@ -11,7 +11,7 @@ from modelo.constantes import ALTO, ANCHO, PALABRAS
 
 def _posicion_borde():
     # posicion aleatoria en un borde de la ventana
-    margen = 30
+    margen = 60
     lado = random.randint(0, 3)
     if lado == 0:
         return random.randint(margen, ANCHO - margen), margen
@@ -45,7 +45,7 @@ def iniciar_oleada(n):
     # genera y devuelve una lista nueva de enemigos para la oleada n
     nueva = []
     cantidad = min(2 + n, 7)
-    velocidad = min(18 + 10 * (n - 1), 90)
+    velocidad = min(36 + 20 * (n - 1), 180)
 
     usadas = set()
     for _ in range(cantidad):
@@ -82,11 +82,12 @@ def iniciar_oleada(n):
 
 class PalabraObjetivo:
 
-    TAM_FUENTE_BASE = 36
+    TAM_FUENTE_BASE = 72
     DURACION_ANIMACION = 350
+    DURACION_RAYO = 120
     DURACION_FALLO = 500
     DURACION_MUERTE = 300
-    RADIO_TOQUE = 46
+    RADIO_TOQUE = 92
 
     def __init__(self, texto, pos, velocidad):
         self.texto = texto
@@ -94,16 +95,15 @@ class PalabraObjetivo:
         self.velocidad = velocidad
 
         # geometria fija: fuente y texto no cambian
-        self.ancho = self.font.size(texto)[0] + 20
-        self.alto = self.font.get_height() + 20
+        self.ancho = self.font.size(texto)[0] + 40
+        self.alto = self.font.get_height() + 40
 
         self.completado_valido = ""
-        self.balas_disparadas = 0
-        self.impactos = 0
         self.muriendo = False
         self.tiempo_muerte = 0
 
         self.tiempo_animacion = 0
+        self.tiempo_rayo = 0
         self.tiempo_fallo = 0
 
         self.x, self.y = 0, 0
@@ -149,14 +149,14 @@ class PalabraObjetivo:
                 self.tiempo_animacion = self.DURACION_ANIMACION
             self.completado_valido = nuevo_completado
 
-    def registrar_disparo(self):
-        self.balas_disparadas = self.balas_disparadas + 1
+    def disparar_rayo(self):
+        # cada letra acertada dispara un rayo breve hacia la palabra
+        self.tiempo_rayo = self.DURACION_RAYO
 
     def perder_progreso(self):
-        # una letra errada borra TODO el progreso: verde, balas disparadas e impactos
+        # una letra errada borra el progreso y dispara el rayo rojo
         self.completado_valido = ""
-        self.balas_disparadas = 0
-        self.impactos = 0
+        self.tiempo_rayo = self.DURACION_RAYO
         self.tiempo_fallo = self.DURACION_FALLO
 
     def iniciar_muerte(self):
@@ -166,22 +166,14 @@ class PalabraObjetivo:
         self.muriendo = True
         self.tiempo_muerte = self.DURACION_MUERTE
 
-    def recibir_impacto(self):
-        # cuenta un impacto; muere al completar sus letras
-        if self.muriendo == True:
-            return False
-        self.impactos = self.impactos + 1
-        if self.impactos >= len(self.texto):
-            self.iniciar_muerte()
-            return True
-        return False
-
     def termino_muerte(self):
         # True cuando la animacion de muerte termino
         return self.muriendo == True and self.tiempo_muerte == 0
 
     def actualizar(self, dt):
         # descuenta los tiempos de animaciones
+        if self.tiempo_rayo > 0:
+            self.tiempo_rayo = max(0, self.tiempo_rayo - dt)
         if self.tiempo_animacion > 0:
             self.tiempo_animacion = max(0, self.tiempo_animacion - dt)
         if self.tiempo_fallo > 0:

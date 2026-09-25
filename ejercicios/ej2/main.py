@@ -5,14 +5,13 @@ import pygame
 
 from controlador.eventos import procesar_eventos
 from modelo.constantes import FPS
-from modelo.partida import Partida
-from vista import visual
+from modelo.partida import FASE_GAME_OVER, FASE_MENU, Partida
+from vista import enemigos, hud, jugador, rayos, ventana
 
 
 def main():
-    # la ventana la arma la vista; el estado lo lleva el modelo
-    screen, clock = visual.crear_ventana()
-    fuente_hud, fuente_final, fuente_bala = visual.crear_fuentes()
+    # la ventana la arma la vista; el estado y la fase los lleva el modelo
+    screen, clock = ventana.crear_ventana()
     partida = Partida()
 
     cerrar_ventana = False
@@ -21,17 +20,19 @@ def main():
 
         cerrar_ventana = procesar_eventos(partida, pygame.event.get())
 
-        if partida.game_over == False:
-            partida.actualizar(dt)
+        partida.actualizar(dt)
 
-        visual.limpiar(screen)
-        visual.dibujar_enemigos(screen, partida.palabras_enemigas)
-        visual.dibujar_balas(screen, partida.balas_jugador, fuente_bala)
-        visual.dibujar_jugador(screen)
-        visual.dibujar_hud(screen, fuente_hud, partida.puntos, partida.oleada)
-
-        if partida.game_over == True:
-            visual.dibujar_game_over(screen, fuente_final, fuente_hud, partida.puntos, partida.oleada)
+        ventana.limpiar(screen)
+        if partida.fase == FASE_MENU:
+            hud.dibujar_menu(screen)
+        elif partida.fase == FASE_GAME_OVER and partida.tiempo_muerte >= partida.DURACION_MUERTE_JUGADOR:
+            # termino la animacion de muerte: pantalla opaca con el resumen
+            hud.dibujar_game_over(screen, partida)
+        else:
+            rayos.dibujar_rayos(screen, partida)
+            enemigos.dibujar_enemigos(screen, partida.palabras_enemigas)
+            jugador.dibujar_jugador(screen, partida)
+            hud.dibujar_hud(screen, partida)
 
         pygame.display.flip()
 

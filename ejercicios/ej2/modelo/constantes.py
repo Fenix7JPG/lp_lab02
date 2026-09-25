@@ -1,20 +1,25 @@
 # constantes.py
-# Valores del juego: ventana, colores, jugador y palabras.
+# Valores del mundo que comparten las capas: tamano, jugador, botones y palabras.
 
-ANCHO = 960
-ALTO = 540
+import pygame
+
+# el mundo del juego: pantalla completa lo muestra tal cual
+ANCHO = 1920
+ALTO = 1080
+
 FPS = 60
-
-COLOR_FONDO = (30, 30, 30)
-COLOR_TEXTO = (255, 255, 255)
-COLOR_TEXTO_SUAVE = (200, 200, 200)
-COLOR_PERDISTE = (220, 30, 30)
-COLOR_VELO = (0, 0, 0, 160)
-COLOR_JUGADOR = (40, 120, 220)
 
 JUGADOR_CX = ANCHO / 2
 JUGADOR_CY = ALTO / 2
-JUGADOR_RADIO = 22
+JUGADOR_RADIO = 44
+
+# rectangulos de los botones: la vista los dibuja y el controlador los clickea
+# (coordenadas del mundo 2x; el controlador multiplica la posicion del clic)
+BOTON_JUGAR = pygame.Rect(ANCHO / 2 - 240, 500, 480, 120)
+BOTON_SALIR = pygame.Rect(ANCHO / 2 - 240, 660, 480, 120)
+BOTON_OTRA_PARTIDA = pygame.Rect(ANCHO / 2 - 240, 520, 480, 110)
+BOTON_MENU = pygame.Rect(ANCHO / 2 - 190, 650, 380, 110)
+BOTON_SALIR_FINAL = pygame.Rect(ANCHO / 2 - 240, 780, 480, 110)
 
 # todas las palabras posibles del juego
 PALABRAS = [            "abanico", "abeja", "aceite", "aceituna", "acordeon", "aguja",

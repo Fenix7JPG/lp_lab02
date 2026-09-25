@@ -1,5 +1,5 @@
 # entrada_texto.py
-# Interpreta las teclas del jugador: devuelve (texto, palabra_activa, palabra_errada).
+# Interpreta las teclas del jugador: devuelve (texto, palabra_activa).
 
 import pygame
 
@@ -8,7 +8,6 @@ import pygame
 def actualizar_texto(eventos, palabras, texto_actual, palabra_activa):
     texto = texto_actual
     activa = palabra_activa
-    palabra_errada = None
 
     for evento in eventos:
         if evento.type == pygame.TEXTINPUT:
@@ -19,14 +18,15 @@ def actualizar_texto(eventos, palabras, texto_actual, palabra_activa):
                         if palabra.texto.startswith(caracter):
                             activa = palabra
                             texto = caracter
+                            activa.disparar_rayo()
                             break
                 elif len(texto) < len(activa.texto):
                     if caracter == activa.texto[len(texto)]:
                         texto = texto + caracter
+                        activa.disparar_rayo()
                     else:
-                        # letra errada: se pierde todo el progreso de la palabra
+                        # letra errada: se pierde el progreso de la palabra
                         activa.perder_progreso()
-                        palabra_errada = activa
                         texto = ""
                         activa = None
         elif evento.type == pygame.KEYDOWN:
@@ -35,4 +35,4 @@ def actualizar_texto(eventos, palabras, texto_actual, palabra_activa):
                 if texto == "":
                     activa = None
 
-    return texto, activa, palabra_errada
+    return texto, activa

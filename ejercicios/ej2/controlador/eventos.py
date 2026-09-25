@@ -1,10 +1,12 @@
 # eventos.py
-# Traduce los eventos de cada frame a acciones sobre la partida.
+# Traduce los eventos de cada frame a acciones sobre la partida, segun su fase.
 
 import pygame
 
 from controlador import entrada_texto
-from controlador.game_over import decision_game_over
+from modelo.constantes import (BOTON_JUGAR, BOTON_MENU, BOTON_OTRA_PARTIDA,
+                              BOTON_SALIR, BOTON_SALIR_FINAL)
+from modelo.partida import FASE_GAME_OVER, FASE_JUGANDO, FASE_MENU
 
 
 def procesar_eventos(partida, eventos):
@@ -15,20 +17,33 @@ def procesar_eventos(partida, eventos):
         if evento.type == pygame.QUIT:
             cerrar_ventana = True
 
-    if partida.game_over == True:
-        decision = decision_game_over(eventos)
-        if decision == "salir":
-            cerrar_ventana = True
-        elif decision == "reiniciar":
-            partida.reiniciar()
+    if partida.fase == FASE_MENU:
+        # en el menu solo importan los clics sobre sus dos botones
+        for evento in eventos:
+            if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
+                if BOTON_JUGAR.collidepoint(evento.pos):
+                    partida.reiniciar()
+                elif BOTON_SALIR.collidepoint(evento.pos):
+                    cerrar_ventana = True
 
-    if partida.game_over == False:
-        # la entrada de texto corre tambien en el frame del reinicio (igual que antes)
-        texto, activa, palabra_errada = entrada_texto.actualizar_texto(eventos, partida.palabras_enemigas, partida.texto, partida.activa)
+    elif partida.fase == FASE_GAME_OVER:
+        # en la derrota, los tres botones deciden el destino
+        for evento in eventos:
+            if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
+                if BOTON_OTRA_PARTIDA.collidepoint(evento.pos):
+                    partida.reiniciar()
+                elif BOTON_MENU.collidepoint(evento.pos):
+                    partida.ir_al_menu()
+                elif BOTON_SALIR_FINAL.collidepoint(evento.pos):
+                    cerrar_ventana = True
+
+    if partida.fase == FASE_JUGANDO:
+        # la entrada de texto corre tambien en el frame donde arranca la partida
+        texto, activa = entrada_texto.actualizar_texto(eventos, partida.palabras_enemigas, partida.texto, partida.activa)
+        # las letras nuevas correctas tecleadas cuentan para el WPM
+        if len(texto) > len(partida.texto):
+            partida.registrar_letras(len(texto) - len(partida.texto))
         partida.texto = texto
         partida.activa = activa
-        if palabra_errada is not None:
-            # las balas ya volando de esa palabra se cancelan (su progreso se perdio)
-            partida.cancelar_balas_de(palabra_errada)
 
     return cerrar_ventana

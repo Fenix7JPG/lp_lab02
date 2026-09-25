@@ -1,53 +1,72 @@
 # partida.py
-# Estado y reglas de la partida completa: puntos, oleada, game over y enemigos.
+# Estado y reglas de la partida: puntos, oleada, WPM, game over y enemigos.
 
-from modelo import balas
 from modelo.constantes import JUGADOR_CX, JUGADOR_CY
 from modelo.palabras import iniciar_oleada
 
+# fases de la partida
+FASE_MENU = "menu"
+FASE_JUGANDO = "jugando"
+FASE_GAME_OVER = "game_over"
+
 
 class Partida:
+
+    # la animacion de muerte del jugador dura estos milisegundos
+    DURACION_MUERTE_JUGADOR = 700
 
     def __init__(self):
         # estado de la partida: antes eran variables sueltas de main
         self.puntos = 0
         self.oleada = 1
-        self.game_over = False
+        self.fase = FASE_MENU
+        self.tiempo_transcurrido = 0
+        self.tiempo_muerte = 0
+        self.letras_acertadas = 0
         self.montar_oleada()
 
     def montar_oleada(self):
         # estado limpio para una oleada nueva
         self.texto = ""
         self.activa = None
-        self.balas_jugador = []
         self.palabras_enemigas = iniciar_oleada(self.oleada)
 
     def reiniciar(self):
-        # Enter en la pantalla de game over: partida desde cero
+        # Jugar / Otra partida: partida desde cero y directo a jugar
         self.puntos = 0
         self.oleada = 1
-        self.game_over = False
+        self.fase = FASE_JUGANDO
+        self.tiempo_transcurrido = 0
+        self.tiempo_muerte = 0
+        self.letras_acertadas = 0
         self.montar_oleada()
 
-    def disparar_balas_nuevas(self):
-        # cada caracter nuevo escrito dispara una bala hacia la palabra activa
-        if self.activa is not None:
-            faltan = len(self.texto) - self.activa.balas_disparadas
-            nuevas = self.texto[len(self.texto) - faltan:]
-            for caracter in nuevas:
-                self.balas_jugador = balas.disparar(self.balas_jugador, (JUGADOR_CX, JUGADOR_CY), self.activa, caracter)
+    def ir_al_menu(self):
+        # Volver al menu: la proxima partida arrancara desde cero
+        self.fase = FASE_MENU
 
-    def cancelar_balas_de(self, palabra):
-        # quita las balas en vuelo de esa palabra (su progreso se perdio)
-        quedan = []
-        for bala in self.balas_jugador:
-            if bala.objetivo is not palabra:
-                quedan.append(bala)
-        self.balas_jugador = quedan
+    def registrar_letras(self, cantidad):
+        # cuenta las letras correctas tecleadas (alimentan el WPM)
+        self.letras_acertadas = self.letras_acertadas + cantidad
+
+    def wpm(self):
+        # palabras por minuto: cada 5 letras acertadas valen una palabra
+        if self.tiempo_transcurrido <= 0:
+            return 0
+        minutos = self.tiempo_transcurrido / 60000.0
+        return int((self.letras_acertadas / 5.0) / minutos)
 
     def actualizar(self, dt):
-        # avanza un frame completo de la partida (solo se llama sin game over)
-        self.disparar_balas_nuevas()
+        if self.fase == FASE_GAME_OVER:
+            # congelado: el tiempo solo corre para la animacion de muerte
+            self.tiempo_muerte = self.tiempo_muerte + dt
+            return
+
+        if self.fase != FASE_JUGANDO:
+            return
+
+        # avanza un frame de la partida
+        self.tiempo_transcurrido = self.tiempo_transcurrido + dt
 
         # pintar el verde ANTES de soltar la palabra (asi queda congelado)
         for palabra in self.palabras_enemigas:
@@ -57,13 +76,12 @@ class Partida:
             palabra.definir_completado(completado)
             palabra.actualizar(dt)
 
-        # soltar la palabra despues de pintar su verde
+        # al completar la palabra muere al instante y suma su punto
         if self.activa is not None and self.texto == self.activa.texto:
+            self.activa.iniciar_muerte()
+            self.puntos = self.puntos + 1
             self.texto = ""
             self.activa = None
-
-        self.balas_jugador, destruidas = balas.avanzar(self.balas_jugador, dt)
-        self.puntos = self.puntos + len(destruidas)
 
         sobrevivientes = []
         for palabra in self.palabras_enemigas:
@@ -73,7 +91,7 @@ class Partida:
 
         for palabra in self.palabras_enemigas:
             if palabra.avanzar(dt, JUGADOR_CX, JUGADOR_CY) == True:
-                self.game_over = True
+                self.fase = FASE_GAME_OVER
                 self.texto = ""
                 self.activa = None
                 break
