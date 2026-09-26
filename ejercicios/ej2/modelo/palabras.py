@@ -1,5 +1,5 @@
 # palabras.py
-# Enemigos: naves con etiqueta que se acercan al jugador; mueren con un impacto por caracter.
+# Enemigos: naves con etiqueta que se acercan al jugador, mueren con un impacto por caracter.
 
 import math
 import random

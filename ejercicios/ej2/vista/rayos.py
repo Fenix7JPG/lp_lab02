@@ -30,7 +30,7 @@ def trazar_rayo_laser(screen, desde, hasta, color):
     y2 = int(hasta[1])
 
     pygame.draw.line(screen, halo, (x1, y1), (x2, y2), 18)
-    pygame.draw.line(screen, color, (x1, y1), (x2, y2), 4)
+    pygame.draw.line(screen, color, (x1, y1), (x2, y2), 10)
 
 
 def dibujar_rayos(screen, partida):

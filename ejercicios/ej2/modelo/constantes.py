@@ -7,7 +7,7 @@ import pygame
 ANCHO = 1920
 ALTO = 1080
 
-FPS = 60
+FPS = 9999
 
 JUGADOR_CX = ANCHO / 2
 JUGADOR_CY = ALTO / 2

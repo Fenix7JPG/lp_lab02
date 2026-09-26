@@ -43,7 +43,11 @@ def procesar_eventos(partida, eventos):
         # las letras nuevas correctas tecleadas cuentan para el WPM
         if len(texto) > len(partida.texto):
             partida.registrar_letras(len(texto) - len(partida.texto))
+
+        # Texto escrito
         partida.texto = texto
+
+        # Palabra objetivo
         partida.activa = activa
 
     return cerrar_ventana

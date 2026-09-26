@@ -7,7 +7,7 @@ from controlador.eventos import procesar_eventos
 from modelo.constantes import FPS
 from modelo.partida import FASE_GAME_OVER, FASE_MENU, Partida
 from vista import enemigos, hud, jugador, rayos, ventana
-
+import time
 
 def main():
     # la ventana la arma la vista; el estado y la fase los lleva el modelo
@@ -26,7 +26,7 @@ def main():
         if partida.fase == FASE_MENU:
             hud.dibujar_menu(screen)
         elif partida.fase == FASE_GAME_OVER and partida.tiempo_muerte >= partida.DURACION_MUERTE_JUGADOR:
-            # termino la animacion de muerte: pantalla opaca con el resumen
+            # termino la animacion de muerte
             hud.dibujar_game_over(screen, partida)
         else:
             rayos.dibujar_rayos(screen, partida)
@@ -35,9 +35,8 @@ def main():
             hud.dibujar_hud(screen, partida)
 
         pygame.display.flip()
-
     pygame.quit()
-
+    
 
 if __name__ == "__main__":
     main()
